@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Linux bridge (br0) traffic in the KDE Plasma 6 network monitor</title>
+<meta name="description" content="KDE Plasma 6 system monitor ignores Linux bridge interfaces like br0, so the Network Speed widget can only graph the enslaved NIC with VM traffic mixed in. A small ksystemstats plugin exposes bridge traffic as Kbps/Mbps/Gbps sensors for a fixed-scale graph." />
+<meta name="author" content="zirize" />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://zirize.github.io/ksystemstats-bridge/" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zirize.github.io/ksystemstats-bridge/" />
+<meta property="og:title" content="Linux bridge (br0) traffic in the KDE Plasma 6 network monitor" />
+<meta property="og:description" content="KDE Plasma 6 system monitor ignores Linux bridge interfaces like br0, so the Network Speed widget can only graph the enslaved NIC with VM traffic mixed in. A small ksystemstats plugin exposes bridge traffic as Kbps/Mbps/Gbps sensors for a fixed-scale graph." />
+<meta name="twitter:card" content="summary" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Linux bridge (br0) traffic in the KDE Plasma 6 network monitor",
+  "description": "KDE Plasma 6 system monitor ignores Linux bridge interfaces like br0, so the Network Speed widget can only graph the enslaved NIC with VM traffic mixed in. A small ksystemstats plugin exposes bridge traffic as Kbps/Mbps/Gbps sensors for a fixed-scale graph.",
+  "url": "https://zirize.github.io/ksystemstats-bridge/",
+  "author": { "@type": "Person", "name": "zirize", "url": "https://github.com/zirize" },
+  "about": ["KDE Plasma 6", "ksystemstats", "Linux bridge", "br0", "network monitor", "system monitor widget"]
+}
+</script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--border:#2d3148;--accent:#7c6af7;--accent2:#56c8a0;--text:#e2e4ef;--muted:#8b90b0;--radius:10px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:16px;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+header{background:linear-gradient(135deg,#1a1d27 0%,#12141e 100%);border-bottom:1px solid var(--border);padding:56px 20px 44px;text-align:center}
+header h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px}
+header p{font-size:1.05rem;color:var(--muted);max-width:620px;margin:0 auto 22px}
+.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btns a{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:.9rem;font-weight:500}
+.btns a:hover{text-decoration:none;border-color:var(--accent)}
+.btns a.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+main{max-width:820px;margin:0 auto;padding:48px 20px;flex:1}
+h2{font-size:1.35rem;margin:44px 0 14px;color:var(--text)}
+h2:first-child{margin-top:0}
+h3{font-size:1.05rem;margin:28px 0 10px;color:var(--accent2)}
+p{margin-bottom:14px;color:var(--text)}
+ul,ol{margin:0 0 16px 22px}
+li{margin-bottom:8px}
+code{font-family:ui-monospace,'Cascadia Code',Menlo,monospace;font-size:.88em;background:#12141e;border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+pre{background:#12141e;border:1px solid var(--border);border-radius:var(--radius);padding:16px;overflow-x:auto;margin-bottom:16px}
+pre code{background:none;border:none;padding:0;font-size:.85rem;line-height:1.6}
+table{width:100%;border-collapse:collapse;margin-bottom:18px;font-size:.92rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px}
+.symptoms{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:var(--radius);padding:20px 24px 8px;margin-bottom:8px}
+.note{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;font-size:.93rem;color:var(--muted)}
+.note strong{color:var(--text)}
+footer{text-align:center;padding:32px 20px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>Linux bridge (br0) traffic in the KDE Plasma 6 network monitor</h1>
+  <p>A small <code>ksystemstats</code> plugin that exposes Linux bridge interfaces as system monitor sensors, so the stock Network Speed widget can graph host-only <code>br0</code> traffic on a fixed scale.</p>
+  <div class="btns">
+    <a class="primary" href="https://github.com/zirize/ksystemstats-bridge">Repository</a>
+    <a href="https://github.com/zirize/ksystemstats-bridge/tree/main/src">Source</a>
+  </div>
+</header>
+<main>
+
+<div class="symptoms">
+<p>If you landed here from a search engine, this is probably what you are seeing:</p>
+<ul>
+<li>Your host uses a bridge (<code>br0</code>) for VMs, and the Plasma <strong>Network Speed widget has no <code>br0</code></strong> to pick — only the physical NIC (often labelled <code>bridge-slave-enp…</code>) and “all”.</li>
+<li>The NIC's graph <strong>includes your VMs' traffic</strong>, so it does not show what the host itself downloads.</li>
+<li>KDE System Monitor lists every interface except the bridge.</li>
+<li>You set a fixed range on a <code>bps</code> sensor, typed <code>100000000</code> for 100 Mbit/s, and the chart came out at about <strong>14 Mbit/s</strong>.</li>
+</ul>
+</div>
+
+<h2>Cause</h2>
+<p><code>ksystemstats</code> 6 deliberately skips non-hardware devices. Both of its network backends — the NetworkManager one and the rtnetlink one — drop interfaces of type <code>bridge</code>. The traffic counters are there in <code>/sys/class/net/br0/statistics/</code>; nothing reads them.</p>
+<p>The 14 Mbit/s problem is separate. Plasma's unit dropdown does not offer Kbps/Mbps/Gbps for a <code>bps</code> sensor, so the range must be typed in bits per second, and the range spin box stores <code>value × 100</code> in a 32-bit integer. Anything above about 21.47 million overflows: 100,000,000 becomes 14,100,654.08.</p>
+
+<h2>Fix</h2>
+<p>The plugin finds every interface with a <code>/sys/class/net/&lt;iface&gt;/bridge</code> directory and publishes it under its own <code>bridge/</code> container, so it never collides with the stock <code>network/</code> sensors:</p>
+<table>
+<tr><th>Sensor</th><th>Unit</th></tr>
+<tr><td><code>bridge/&lt;iface&gt;/download</code>, <code>upload</code></td><td>B/s</td></tr>
+<tr><td><code>bridge/&lt;iface&gt;/downloadBits</code>, <code>uploadBits</code></td><td>bps</td></tr>
+<tr><td><code>bridge/&lt;iface&gt;/downloadKbps</code>, <code>uploadKbps</code></td><td>Kbps</td></tr>
+<tr><td><code>bridge/&lt;iface&gt;/downloadMbps</code>, <code>uploadMbps</code></td><td>Mbps</td></tr>
+<tr><td><code>bridge/&lt;iface&gt;/downloadGbps</code>, <code>uploadGbps</code></td><td>Gbps</td></tr>
+<tr><td><code>bridge/&lt;iface&gt;/totalDownload</code>, <code>totalUpload</code></td><td>B</td></tr>
+</table>
+<p>The Kbps/Mbps/Gbps variants exist for the overflow above: with a sensor already in Mbps, a 0–100 Mbit/s range is typed as <code>0</code> and <code>100</code>.</p>
+<p>Bridges are rescanned every 10 seconds. On every other tick the plugin does one <code>pread()</code> per counter on files it keeps open, reads nothing while no client is subscribed, and updates only the sensors a client is watching.</p>
+
+<h3>Build and install</h3>
+<p>Dependencies on Ubuntu/Debian: <code>cmake g++ qt6-base-dev libksysguard-dev libkf6coreaddons-dev libsensors-dev</code>.</p>
+<pre><code>git clone https://github.com/zirize/ksystemstats-bridge.git
+cd ksystemstats-bridge
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$HOME/.local"
+cmake --build build -j"$(nproc)"
+cmake --install build</code></pre>
+<p>The plugin lands in <code>~/.local/lib/qt6/plugins/ksystemstats/</code>, which the daemon does not search by default. A systemd drop-in for its user service adds the path:</p>
+<pre><code>mkdir -p ~/.config/systemd/user/plasma-ksystemstats.service.d
+cp systemd/plasma-ksystemstats.service.d/bridge-plugin.conf \
+   ~/.config/systemd/user/plasma-ksystemstats.service.d/
+systemctl --user daemon-reload
+systemctl --user restart plasma-ksystemstats.service</code></pre>
+
+<h3>Widget setup: fixed 0–100 Mbit/s</h3>
+<ol>
+<li>Add the stock <strong>Network Speed</strong> widget to a panel and open its settings.</li>
+<li><strong>Sensors Details</strong>: remove the <code>network/*</code> sensors, add <strong>Bridge → br0 → Download Rate</strong> in Mbps (<code>bridge/br0/downloadMbps</code>), and <code>uploadMbps</code> if you want it.</li>
+<li><strong>Appearance</strong>: line or bar chart; hide title, grid lines and legend for a compact graph.</li>
+<li><strong>Line Chart Details</strong>: turn off the automatic range, set minimum <code>0</code> and maximum <code>100</code>.</li>
+</ol>
+
+<h2>Verify</h2>
+<pre><code>kstatsviewer --list | grep '^bridge/'
+kstatsviewer --remain bridge/br0/downloadMbps</code></pre>
+<p>The first command lists the sensors for every bridge; the second streams the live rate. Compare it with a download of known speed, or with <code>rx_bytes</code> read twice a second apart.</p>
+
+<div class="note"><strong>Tested on</strong> Ubuntu 26.04.1 LTS, KDE Plasma 6.6.7, <code>ksystemstats</code> 6.6.7, with the user-local install above. A system-wide install into the distribution's Qt plugin directory should not need the drop-in, but has not been tried.</div>
+
+<p>License: GPL-2.0-or-later. Full README, source and the design note on the per-tick path are in the <a href="https://github.com/zirize/ksystemstats-bridge">repository</a>.</p>
+
+</main>
+<footer>
+  <p>Made by <a href="https://github.com/zirize">zirize</a> &middot; <a href="https://zirize.github.io/">More projects</a></p>
+</footer>
+</body>
+</html>
